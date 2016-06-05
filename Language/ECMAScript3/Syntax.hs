@@ -380,7 +380,7 @@ isReservedWord = (`elem` reservedWords)
 
 -- | Checks if a character is valid at the start of an identifier
 isValidIdStart :: Char -> Bool
-isValidIdStart c = unicodeLetter c || c == '$' || c == '_'
+isValidIdStart c = unicodeLetter c || c == '$' || c == '_' 
   where unicodeLetter c = case generalCategory c of
           UppercaseLetter -> True
           LowercaseLetter -> True

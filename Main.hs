@@ -29,6 +29,7 @@ evalStmt env (VarDeclStmt []) = return Nil
 evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
+evalStmt env (IfSingleStmt stm expr) = evaluate env [expr]
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
