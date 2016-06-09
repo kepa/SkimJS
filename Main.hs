@@ -36,6 +36,41 @@ evaluate :: StateT -> [Statement] -> StateTransformer Value
 evaluate env [] = return Nil
 evaluate env stmts = foldl1 (>>) $ map (evalStmt env) stmts
 
+
+--FOR Não sei se esse é o lugar correto.
+evalStmt env (FORStmt initi condi itera action) = ST $ \s -> let
+        (ST a) = evalStmt env EmptyStmt
+        (ignore, newS) = a s
+        (ST g) = do
+            evalFor env initi
+            case condi of
+                (Just (a)) -> do
+                    Bool fo <- evalStmt env a
+                    if fo then do
+                        fo1 <- evalStmt env action
+                        case fo1 of
+                            Break -> return Nil
+                            (Return a) -> return (Return a)
+                            _ ->  do
+                                case itera of
+                                    (Just (b)) -> evalExpr env b
+                                    Nothing -> return Nil
+                                evalStmt env (FORStmt NoInit condi itera action)
+                    else return Nil
+                Nothing -> do
+                    fo1 -> evalStmt env action
+                    case fo1 of
+                        Break -> return Nil
+                        (Return a) -> return (Return a)
+                        _ -> do
+                            case itera of
+                                (Just (b)) -> evalExprenv b
+                                Nothing -> return Nil
+                            evalStmt env (FORStmt NoInit condi itera action)
+        (resp,ign) = g newS
+    in (resp,ign)
+--FIM FOR    
+
 --
 -- Operators
 --
