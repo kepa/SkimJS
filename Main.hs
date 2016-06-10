@@ -30,8 +30,46 @@ evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
 evalStmt env (IfSingleStmt stm expr) = do
-    evaluate env [expr]
-    evalExpr env stm
+    Bool s <- evalExpr env stm
+    if s then evalStmt env expr else return Nil
+evalStmt env (IfStmt stm expr1 expr2) = do
+    Bool s <- evalExpr env stm
+    if s then evalStmt env expr1 else evalStmt env expr2
+
+--FOR Não sei se esse é o lugar correto.
+{-evalStmt env (ForStmt initi condi itera action) = ST $ \s -> let
+        (ST a) = evalStmt env EmptyStmt
+        (ignore, newS) = a s
+        (ST g) = do
+            evalFor env initi
+            case condi of
+                (Just (a)) -> do
+                    Bool fo <- evalStmt env a
+                    if fo then do
+                        fo1 <- evalStmt env action
+                        case fo1 of
+                            Break -> return Nil
+                            (Return a) -> return (Return a)
+                            _ ->  do
+                                case itera of
+                                    (Just (b)) -> evalExpr env b
+                                    Nothing -> return Nil
+                                evalStmt env (ForStmt NoInit condi itera action)
+                    else return Nil
+                Nothing -> do
+                    fo1 <- evalStmt env action
+                    case fo1 of
+                        Break -> return Nil
+                        (Return a) -> return (Return a)
+                        _ -> do
+                            case itera of
+                                (Just (b)) -> evalExpr b
+                                Nothing -> return Nil
+                            evalStmt env (ForStmt NoInit condi itera action)
+        (resp,ign) = g newS
+    in (resp,ign)-}
+--FIM FOR    
+
 
 
 -- Do not touch this one :)
