@@ -36,38 +36,48 @@ evalStmt env (IfStmt stm expr1 expr2) = do
     Bool s <- evalExpr env stm
     if s then evalStmt env expr1 else evalStmt env expr2
 
+
+
 --FOR Não sei se esse é o lugar correto.
-{-evalStmt env (ForStmt initi condi itera action) = ST $ \s -> let
+evalFor :: StateT -> ForInit -> StateTransformer Value
+evalFor env (VarInit a) = do
+    evalStmt env (VarDeclStmt a)
+evalFor env NoInit = return Nil
+evalFor env (ExprInit b) = evalExpr env b
+
+
+evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
+    let
         (ST a) = evalStmt env EmptyStmt
         (ignore, newS) = a s
         (ST g) = do
-            evalFor env initi
+            evalFor env initi        
             case condi of
-                (Just (a)) -> do
-                    Bool fo <- evalStmt env a
-                    if fo then do
-                        fo1 <- evalStmt env action
-                        case fo1 of
+                (Just (a)) -> do 
+                    Bool tf <- evalExpr env a
+                    if tf then do
+                        r1 <- evalStmt env action
+                        case r1 of 
                             Break -> return Nil
                             (Return a) -> return (Return a)
-                            _ ->  do
-                                case itera of
+                            _ -> do
+                                case itera of 
                                     (Just (b)) -> evalExpr env b
                                     Nothing -> return Nil
                                 evalStmt env (ForStmt NoInit condi itera action)
                     else return Nil
-                Nothing -> do
-                    fo1 <- evalStmt env action
-                    case fo1 of
+                Nothing -> do 
+                    r1 <- evalStmt env action
+                    case r1 of
                         Break -> return Nil
                         (Return a) -> return (Return a)
                         _ -> do
-                            case itera of
-                                (Just (b)) -> evalExpr b
-                                Nothing -> return Nil
-                            evalStmt env (ForStmt NoInit condi itera action)
+                                case itera of 
+                                    (Just (b)) -> evalExpr env b
+                                    Nothing -> return Nil
+                                evalStmt env (ForStmt NoInit condi itera action)
         (resp,ign) = g newS
-    in (resp,ign)-}
+in (resp,ign)
 --FIM FOR    
 
 
