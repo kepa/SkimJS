@@ -36,6 +36,31 @@ evalStmt env (IfStmt stm expr1 expr2) = do
     Bool s <- evalExpr env stm
     if s then evalStmt env expr1 else evalStmt env expr2
 
+--Editei aqui(Parte do Break)
+evalStmt env (BlockStm []) = return Nil
+evalStmt env (BlockStm (stmt1:stmt2)) = do
+    case stmt1 of
+        BreakStm _ -> return Break
+        ReturnStmt a -> do
+            case a of
+                (Just expr) ->
+                    ST $ \s ->
+                        let
+                            respos = let
+                                        (ST f) = evalExpr env expr
+                                        (resp,ign) = f s
+                                        resposta = (Return resp)
+                                     in resposta
+                        in (respos,s)
+                (Nothing) -> return Nil
+        _ -> do
+            e <- evalStmt env stmt1
+            case of
+                (Break) -> return Break
+                (Return v) -> return v
+                _ -> evalStmt env (BlockStm stmt2)
+
+
 
 
 --FOR Não sei se esse é o lugar correto.
@@ -80,6 +105,9 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
 in (resp,ign)
 --FIM FOR    
 
+--Inicio Break
+evalStmt env (BreakStm _) -> return Break
+--Fim Break
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
