@@ -137,6 +137,7 @@ evalStmt env (BlockStmt (stm:stmts)) = do
     s <- evalStmt env stm
     case s of
         Break -> return Nil
+        Return a -> return (Return a)
         _ -> evalStmt env (BlockStmt stmts)
 -- Empty
 evalStmt env EmptyStmt = return Nil
@@ -161,6 +162,7 @@ evalStmt env (WhileStmt expr stmt) = do
         s <- evalStmt env stmt
         case s of
             Break -> return Nil
+            Return a -> return (Return a)
             _ -> evalStmt env (WhileStmt expr stmt)
     else return Nil
 -- Function
