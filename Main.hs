@@ -37,62 +37,62 @@ evalStmt env (IfStmt stm expr1 expr2) = do
     if s then evalStmt env expr1 else evalStmt env expr2
 --Editei aqui(Parte do Break)
 evalStmt env (BlockStmt []) = return Nil
-evalStmt env (BlockStmt (stmt1:stmt2)) = do
-    case stmt1 of
-        BreakStmt _ -> return break
-        ReturnStmt a -> do
-            case a of
-                (Just expr) ->
-                    ST $ \s ->
-                        let
-                            respos = let
-                                        (ST f) = evalExpr env expr
-                                        (resp,ign) = f s
-                                        resposta = (return resp)
-                                     in resposta
-                        in (respos,s)
-                (Nothing) -> return Nil
-        _ -> do
-            e <- evalStmt env stmt1
-            case e of
-                (break) -> return break
-                (ReturnStmt v) -> return v
-                _ -> evalStmt env (BlockStmt stmt2)
-evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
-    let
-        (ST a) = evalStmt env EmptyStmt
-        (ignore, newS) = a s
-        (ST g) = do
-            evalFor env initi        
-            case condi of
-                (Just (a)) -> do 
-                    Bool tf <- evalExpr env a
-                    if tf then do
-                        r1 <- evalStmt env action
-                        case r1 of 
-                            break -> return Nil
-                            (ReturnStmt a) -> return (ReturnStmt a)
-                            _ -> do
-                                case itera of 
-                                    (Just (b)) -> evalExpr env b
-                                    Nothing -> return Nil
-                                evalStmt env (ForStmt NoInit condi itera action)
-                    else return Nil
-                Nothing -> do 
-                    r1 <- evalStmt env action
-                    case r1 of
-                        break -> return Nil
-                        (ReturnStmt a) -> return (ReturnStmt a)
-                        _ -> do
-                                case itera of 
-                                    (Just (b)) -> evalExpr env b
-                                    Nothing -> return Nil
-                                evalStmt env (ForStmt NoInit condi itera action)
-        (resp,ign) = g newS
-    in (resp,ign)
+--evalStmt env (BlockStmt (stmt1:stmt2)) = do
+--    case stmt1 of
+--        BreakStmt _ -> return break
+--        ReturnStmt a -> do
+--            case a of
+--                (Just expr) ->
+--                    ST $ \s ->
+--                        let
+--                            respos = let
+--                                        (ST f) = evalExpr env expr
+--                                        (resp,ign) = f s
+--                                        resposta = (return resp)
+--                                     in resposta
+--                        in (respos,s)
+--                (Nothing) -> return Nil
+--        _ -> do
+--            e <- evalStmt env stmt1
+--            case e of
+--                (break) -> return break
+--                (ReturnStmt v) -> return v
+--                _ -> evalStmt env (BlockStmt stmt2)
+--evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
+--    let
+--        (ST a) = evalStmt env EmptyStmt
+--        (ignore, newS) = a s
+--        (ST g) = do
+--            evalFor env initi        
+--            case condi of
+--                (Just (a)) -> do 
+--                    Bool tf <- evalExpr env a
+--                    if tf then do
+--                        r1 <- evalStmt env action
+--                        case r1 of 
+--                            break -> return Nil
+--                            (ReturnStmt a) -> return (ReturnStmt a)
+--                            _ -> do
+--                                case itera of 
+--                                    (Just (b)) -> evalExpr env b
+--                                    Nothing -> return Nil
+--                                evalStmt env (ForStmt NoInit condi itera action)
+--                    else return Nil
+--                Nothing -> do 
+--                    r1 <- evalStmt env action
+--                    case r1 of
+--                        break -> return Nil
+--                        (ReturnStmt a) -> return (ReturnStmt a)
+--                        _ -> do
+--                                case itera of 
+--                                    (Just (b)) -> evalExpr env b
+--                                    Nothing -> return Nil
+--                                evalStmt env (ForStmt NoInit condi itera action)
+--        (resp,ign) = g newS
+--    in (resp,ign)
 --FIM FOR
 --Inicio Break
-evalStmt env (BreakStmt _ ) = return break
+evalStmt env (BreakStmt _ ) = return Nil
 --Fim Break
 
 
@@ -125,6 +125,7 @@ infixOp env OpGT   (Int  v1) (Int  v2) = return $ Bool $ v1 > v2
 infixOp env OpGEq  (Int  v1) (Int  v2) = return $ Bool $ v1 >= v2
 infixOp env OpEq   (Int  v1) (Int  v2) = return $ Bool $ v1 == v2
 infixOp env OpEq   (Bool v1) (Bool v2) = return $ Bool $ v1 == v2
+infixOp env OpNEq  (Int  v1) (Int  v2) = return $ Bool $ v1 /= v2
 infixOp env OpNEq  (Bool v1) (Bool v2) = return $ Bool $ v1 /= v2
 infixOp env OpLAnd (Bool v1) (Bool v2) = return $ Bool $ v1 && v2
 infixOp env OpLOr  (Bool v1) (Bool v2) = return $ Bool $ v1 || v2
