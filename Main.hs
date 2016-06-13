@@ -86,7 +86,7 @@ concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
 concat' env (List ls) [] = return $ List ls
 concat' env (List ls) (a1:as1) = do
     a <- evalExpr env a1
---    List as1 <- evalExpr env as1
+--    as <- evalExpr env as1
     concat' env (List (ls ++ [a])) as1
 
 -- lengthInt env list -> Int
