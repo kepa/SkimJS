@@ -41,6 +41,7 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
         "tail" -> tail' env e
         --"concat" -> concat' env e params
         "length" -> intToST env (lengthInt e)
+        -- "equals" -> equalsToST env (equalsBool env e params)
 
 -- função para declarar as variáveis do parâmetro da função
 declareArgs :: StateT -> [Id] -> [Expression] -> StateTransformer Value
@@ -53,6 +54,20 @@ declareArgs env ((Id a):as) (p:ps) = do
 declareArgs env _ _ = return Nil
 
 -- Funções da lista
+-- equals' env list expr
+-- expr = list2
+
+-- Tá dando erro porque a é um Value e b é uma Expression
+
+{-equalsBool :: StateT -> Value -> [Expression] -> Bool
+equalsBool env (List []) [] = True
+equalsBool env (List (a:as)) (b:bs)
+   | lengthInt (List(a:as)) /= length (b:bs) = False
+   | a /= b = False
+   | otherwise = equalsBool env (List as) bs-}
+
+equalsToST :: StateT -> Bool -> StateTransformer Value
+equalsToST env val = return $ (Bool val)
 
 -- head' env list
 head' :: StateT -> Value -> StateTransformer Value
