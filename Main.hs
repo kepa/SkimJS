@@ -30,6 +30,14 @@ evalExpr env (ArrayLit (expr:exprs)) = do
 evalExpr env (StringLit str) = return $ String str
 evalExpr env (FuncExpr (Nothing) args stmt) = return $ Function (Id "") args stmt
 evalExpr env (FuncExpr (Just id) args stmt) = return $ Function id args stmt
+-- BracketRef Expression {- container -} Expression {- key -}
+evalExpr env (BracketRef expr index) = do
+    ls <- evalExpr env expr
+    i <- evalExpr env index
+    case ls of
+        List l -> do
+            getElement env ls i
+        _ -> error $ "Object must be a list"
 evalExpr env (CallExpr (VarRef (Id name)) params) = do
     Function nameFunct args stmt <- stateLookup env name
     declareArgs env args params
@@ -42,6 +50,17 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
         --"concat" -> concat' env e params
         "length" -> intToST env (lengthInt e)
         -- "equals" -> equalsToST env (equalsBool env e params)
+
+-- getElement from list
+getElement :: StateT -> Value -> Value -> StateTransformer Value
+getElement env (List []) i = error $ "Out of bounds"
+getElement env (List (a:as)) i = do
+    case i of
+        Int index -> do
+            if index < 0 then error $ "Index cannot be negative"
+            else if index == 0 then return a
+            else getElement env (List as) (Int (index-1))
+        _ -> error $ "Index must be an integer"
 
 -- função para declarar as variáveis do parâmetro da função
 declareArgs :: StateT -> [Id] -> [Expression] -> StateTransformer Value
