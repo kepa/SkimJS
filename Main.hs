@@ -24,22 +24,36 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     setVar var e
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
+evalStmt env (BlockStmt []) = return Nil
+evalStmt env (BlockStmt [stm]) = evalStmt env stm
+evalStmt env (BlockStmt (stm:stmts)) = do
+    evalStmt env stm
+    evalStmt env (BlockStmt stmts)
 evalStmt env EmptyStmt = return Nil
 evalStmt env (VarDeclStmt []) = return Nil
 evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
 evalStmt env (ExprStmt expr) = evalExpr env expr
-evalStmt env (IfSingleStmt stm expr) = do
-    Bool s <- evalExpr env stm
-    if s then evalStmt env expr else return Nil
-evalStmt env (IfStmt stm expr1 expr2) = do
-    Bool s <- evalExpr env stm
-    if s then evalStmt env expr1 else evalStmt env expr2
+evalStmt env (IfSingleStmt expr stm) = do
+    Bool e <- evalExpr env expr
+    if e then evalStmt env stm else return Nil
+evalStmt env (IfStmt expr stm1 stm2) = do
+    Bool e <- evalExpr env expr
+    if e then evalStmt env stm1 else evalStmt env stm2
+evalStmt env (WhileStmt expr stmt) = do
+    Bool e <- evalExpr env expr
+    if e then do
+        s <- evalStmt env stmt
+        case s of
+            Break -> return Nil
+            _ -> evalStmt env (WhileStmt expr stmt)
+    else return Nil
+
 --Editei aqui(Parte do Break)
-evalStmt env (BlockStmt []) = return Nil
+{-evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt (stmt1:stmt2)) = do
     case stmt1 of
-        BreakStmt _ -> return break
+        BreakStmt _ -> return Break
         ReturnStmt a -> do
             case a of
                 (Just expr) ->
@@ -55,7 +69,7 @@ evalStmt env (BlockStmt (stmt1:stmt2)) = do
         _ -> do
             e <- evalStmt env stmt1
             case e of
-                (break) -> return break
+                (Break) -> return Break
                 (ReturnStmt v) -> return v
                 _ -> evalStmt env (BlockStmt stmt2)
 evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
@@ -70,7 +84,7 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                     if tf then do
                         r1 <- evalStmt env action
                         case r1 of 
-                            break -> return Nil
+                            Break -> return Nil
                             (ReturnStmt a) -> return (ReturnStmt a)
                             _ -> do
                                 case itera of 
@@ -81,7 +95,7 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                 Nothing -> do 
                     r1 <- evalStmt env action
                     case r1 of
-                        break -> return Nil
+                        Break -> return Nil
                         (ReturnStmt a) -> return (ReturnStmt a)
                         _ -> do
                                 case itera of 
@@ -89,11 +103,12 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                                     Nothing -> return Nil
                                 evalStmt env (ForStmt NoInit condi itera action)
         (resp,ign) = g newS
-    in (resp,ign)
+    in (resp,ign)-}
 --FIM FOR
 --Inicio Break
-evalStmt env (BreakStmt _ ) = return break
+evalStmt env (BreakStmt _ ) = return Break
 --Fim Break
+evalStmt env (ContinueStmt _) = return Continue
 
 
 --FOR Não sei se esse é o lugar correto.
