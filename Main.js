@@ -9,12 +9,14 @@ if(x == 0) {
 	x = 1;
 }
 
-var list = [1,2,3,4,5];
-list.head();
-*/
-
-function test(x, y){
-	return x - y;
+function test(x){
+	return x - 2;
 }
 
-var n = test(5, 4);
+test(5);
+
+*/
+
+var list = [1,2,3,4,5];
+
+list[0];
