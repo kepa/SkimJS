@@ -5,7 +5,8 @@ data Value = Bool Bool
     | String String
     | Var String
     | Break
-    | Continue
+    | List [Value]
+  --  | Function Id [Id] [Statement]
     | Nil
 
 --
@@ -20,7 +21,9 @@ instance Show Value where
   show (Var name) = name
   show Nil = "undefined"
   show Break = "Break"
-  show Continue = "Continue"
+  show (List []) = ""
+  show (List [a]) = show a
+  show (List (a:as)) = (show a) ++ ", " ++ (show (List as))
   
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 

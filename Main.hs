@@ -22,24 +22,37 @@ evalExpr env (AssignExpr OpAssign (LVar var) expr) = do
     stateLookup env var -- crashes if the variable doesn't exist
     e <- evalExpr env expr
     setVar var e
+evalExpr env (ArrayLit []) = return $ List []
+evalExpr env (ArrayLit (expr:exprs)) = do
+    l <- evalExpr env expr
+    List ls <- evalExpr env (ArrayLit exprs)
+    return $ List (l:ls)
+evalExpr env (StringLit str) = return $ String str
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
+-- Block
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stm]) = evalStmt env stm
 evalStmt env (BlockStmt (stm:stmts)) = do
     evalStmt env stm
     evalStmt env (BlockStmt stmts)
+-- Empty
 evalStmt env EmptyStmt = return Nil
+--VarDecl
 evalStmt env (VarDeclStmt []) = return Nil
 evalStmt env (VarDeclStmt (decl:ds)) =
     varDecl env decl >> evalStmt env (VarDeclStmt ds)
+-- Expr
 evalStmt env (ExprStmt expr) = evalExpr env expr
+-- IFSingle
 evalStmt env (IfSingleStmt expr stm) = do
     Bool e <- evalExpr env expr
     if e then evalStmt env stm else return Nil
+-- IFStmt
 evalStmt env (IfStmt expr stm1 stm2) = do
     Bool e <- evalExpr env expr
     if e then evalStmt env stm1 else evalStmt env stm2
+-- While
 evalStmt env (WhileStmt expr stmt) = do
     Bool e <- evalExpr env expr
     if e then do
@@ -108,8 +121,6 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
 --Inicio Break
 evalStmt env (BreakStmt _ ) = return Break
 --Fim Break
-evalStmt env (ContinueStmt _) = return Continue
-
 
 --FOR Não sei se esse é o lugar correto.
 evalFor :: StateT -> ForInit -> StateTransformer Value
