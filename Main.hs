@@ -30,6 +30,70 @@ evalExpr env (ArrayLit (expr:exprs)) = do
 evalExpr env (StringLit str) = return $ String str
 evalExpr env (FuncExpr (Nothing) args stmt) = return $ Function (Id "") args stmt
 evalExpr env (FuncExpr (Just id) args stmt) = return $ Function id args stmt
+evalExpr env (CallExpr (VarRef (Id name)) params) = do
+    Function nameFunct args stmt <- stateLookup env name
+    declareArgs env args params
+    evalStmt env (BlockStmt stmt)
+evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
+    e <- evalExpr env expr
+    case name of
+        "head" -> head' env e
+        "tail" -> tail' env e
+        --"concat" -> concat' env e params
+        "length" -> intToST env (lengthInt e)
+
+-- função para declarar as variáveis do parâmetro da função
+declareArgs :: StateT -> [Id] -> [Expression] -> StateTransformer Value
+-- declareArgs env args params
+declareArgs env [] [] = return Nil
+declareArgs env ((Id a):as) (p:ps) = do
+    var <- evalExpr env p
+    setVar a var
+    declareArgs env as ps
+declareArgs env _ _ = return Nil
+
+-- Funções da lista
+
+-- head' env list
+head' :: StateT -> Value -> StateTransformer Value
+head' env (List []) = return Nil
+head' env (List (a:as)) = return $ a
+
+-- tail' env list
+tail' :: StateT -> Value -> StateTransformer Value
+tail' env (List []) = return Nil
+tail' env (List (a:as)) = return $ (List as)
+
+-- concat' env list expr
+-- [expr: list2]
+-- não funciona
+{-concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
+concat' env (List ls) [] = return $ List ls
+concat' env (List ls) (a:as) = do
+    a <- evalExpr env a
+    (List as) <- evalExpr env as
+    concat' (List (ls ++ [a])) as-}
+
+-- lengthInt env list -> Int
+lengthInt :: Value -> Int
+lengthInt (List []) = 0
+lengthInt (List (a:as)) = 1 + lengthInt (List as)
+
+-- intToST
+intToST :: StateT -> Int -> StateTransformer Value
+intToST env val = return $ (Int val)
+
+{-evalExpr env (CallExpr name params) = do
+    func <- evalExpr env name
+    case func of
+        Function nameFunct args stmt -> do
+            b <- evalStmt env (BlockStmt stmt)
+            case b of
+                Break -> return Break
+                Return r -> return r
+                _ -> return Nil
+        _ -> return Nil -- var "name" is not a function-}
+
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 -- Block
@@ -67,6 +131,11 @@ evalStmt env (WhileStmt expr stmt) = do
     else return Nil
 -- Function
 evalStmt env (FunctionStmt (Id name) args stmt) = setVar name (Function (Id name) args stmt)
+-- Return
+evalStmt env (ReturnStmt Nothing) = return $ Return Nil
+evalStmt env (ReturnStmt (Just expr)) = do
+    e <- evalExpr env expr
+    return $ Return e
 
 --Editei aqui(Parte do Break)
 {-evalStmt env (BlockStmt []) = return Nil
@@ -125,7 +194,7 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
     in (resp,ign)-}
 --FIM FOR
 --Inicio Break
-evalStmt env (BreakStmt _ ) = return Break
+evalStmt env (BreakStmt _) = return Break
 --Fim Break
 
 --FOR Não sei se esse é o lugar correto.

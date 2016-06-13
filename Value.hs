@@ -9,6 +9,7 @@ data Value = Bool Bool
     | Break
     | List [Value]
     | Function Id [Id] [Statement]
+    | Return Value
     | Nil
 
 --
@@ -23,11 +24,10 @@ instance Show Value where
   show (Var name) = name
   show Nil = "undefined"
   show Break = "Break"
-  show (List []) = ""
-  show (List [a]) = show a
-  show (List (a:as)) = (show a) ++ ", " ++ (show (List as))
+  show (List ls) = show ls
   show (Function (Id name) args stmt) = "function " ++ name ++ "(" ++ show args ++ ")" ++ show stmt
-  
+  show (Return val) = show val
+
 -- This function could be replaced by (unwords.map show). The unwords
 -- function takes a list of String values and uses them to build a 
 -- single String where the words are separated by spaces.
