@@ -28,14 +28,18 @@ evalExpr env (ArrayLit (expr:exprs)) = do
     List ls <- evalExpr env (ArrayLit exprs)
     return $ List (l:ls)
 evalExpr env (StringLit str) = return $ String str
+evalExpr env (FuncExpr (Nothing) args stmt) = return $ Function (Id "") args stmt
+evalExpr env (FuncExpr (Just id) args stmt) = return $ Function id args stmt
 
 evalStmt :: StateT -> Statement -> StateTransformer Value
 -- Block
 evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt [stm]) = evalStmt env stm
 evalStmt env (BlockStmt (stm:stmts)) = do
-    evalStmt env stm
-    evalStmt env (BlockStmt stmts)
+    s <- evalStmt env stm
+    case s of
+        Break -> return Nil
+        _ -> evalStmt env (BlockStmt stmts)
 -- Empty
 evalStmt env EmptyStmt = return Nil
 --VarDecl
@@ -61,6 +65,9 @@ evalStmt env (WhileStmt expr stmt) = do
             Break -> return Nil
             _ -> evalStmt env (WhileStmt expr stmt)
     else return Nil
+-- Function
+evalStmt env (FunctionStmt (Id name) args stmt) = setVar name (Function (Id name) args stmt)
+
 --Editei aqui(Parte do Break)
 {-evalStmt env (BlockStmt []) = return Nil
 evalStmt env (BlockStmt (stmt1:stmt2)) = do
@@ -166,7 +173,7 @@ stateLookup :: StateT -> String -> StateTransformer Value
 stateLookup env var = ST $ \s ->
     -- this way the error won't be skipped by lazy evaluation
     case Map.lookup var (union s env) of
-        Nothing -> error $ "Variable " ++ show var ++ " not defiend."
+        Nothing -> error $ "Variable " ++ show var ++ " not defined."
         Just val -> (val, s)
 
 varDecl :: StateT -> VarDecl -> StateTransformer Value
