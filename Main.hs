@@ -47,9 +47,9 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
     case name of
         "head" -> head' env e
         "tail" -> tail' env e
-        "concat" -> concat' env e (ArrayLit params)
-        "length" -> intToST env (lengthInt e)
-        -- "equals" -> equalsToST env (equalsBool env e params)
+        "concat" -> concat' env e params
+        "len" -> intToST env (lengthInt e)
+        "equals" -> equalsToST env (equalsBool env e (arrToST params))
 
 -- getElement from list
 getElement :: StateT -> Value -> Value -> StateTransformer Value
@@ -78,12 +78,18 @@ declareArgs env _ _ = return Nil
 
 -- Tá dando erro porque a é um Value e b é uma Expression
 
-{-equalsBool :: StateT -> Value -> [Expression] -> Bool
-equalsBool env (List []) [] = True
+{-equalsBool :: StateT -> Value -> Expression -> Bool
+equalsBool env (List []) (ArrayLit []) = True
 equalsBool env (List (a:as)) (b:bs)
    | lengthInt (List(a:as)) /= length (b:bs) = False
    | a /= b = False
    | otherwise = equalsBool env (List as) bs-}
+
+equalsBool :: StateT -> Value -> Value -> Bool
+equalsBool env (List []) (List []) = True
+--equalsBool env (List (a:as)) b = do
+--    List (b1:bs1) <- evalExpr env b 
+--    if (lengthInt (List(a:as)) /= lengthInt (List(b1:bs1))) then return False else return True
 
 equalsToST :: StateT -> Bool -> StateTransformer Value
 equalsToST env val = return $ (Bool val)
@@ -101,12 +107,12 @@ tail' env (List (a:as)) = return $ (List as)
 -- concat' env list expr
 -- [expr: list2]
 -- não funciona
-concat' :: StateT -> Value -> Expression -> StateTransformer Value
-concat' env (List ls) (ArrayLit []) = return $ List ls
-concat' env (List ls) (ArrayLit (a1:as1)) = do
+concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
+concat' env (List ls) [] = return $ List ls
+concat' env (List ls) (a1:as1) = do
     a <- evalExpr env a1
---    as <- evalExpr env (ArrayLit as1)
-    concat' env (List (ls ++ [a])) (ArrayLit as1)
+    (List as) <- concat' env a as1 -- transforma [expression] em value
+    return (List (ls ++ as))
 
 -- lengthInt env list -> Int
 lengthInt :: Value -> Int
@@ -116,6 +122,12 @@ lengthInt (List (a:as)) = 1 + lengthInt (List as)
 -- intToST
 intToST :: StateT -> Int -> StateTransformer Value
 intToST env val = return $ (Int val)
+
+-- arrToST
+arrToST :: StateT -> Expression -> StateTransformer Value
+arrToST env a = do
+    List b <- evalExpr env a
+    return $ List b
 
 {-evalExpr env (CallExpr name params) = do
     func <- evalExpr env name
@@ -137,7 +149,7 @@ evalStmt env (BlockStmt (stm:stmts)) = do
     s <- evalStmt env stm
     case s of
         Break -> return Nil
-        Return a -> return (Return a)
+        Return a -> return a
         _ -> evalStmt env (BlockStmt stmts)
 -- Empty
 evalStmt env EmptyStmt = return Nil
@@ -162,7 +174,7 @@ evalStmt env (WhileStmt expr stmt) = do
         s <- evalStmt env stmt
         case s of
             Break -> return Nil
-            Return a -> return (Return a)
+            Return a -> return a
             _ -> evalStmt env (WhileStmt expr stmt)
     else return Nil
 -- Function
@@ -194,7 +206,7 @@ evalStmt env (ForStmt init test incr stmt) = do
             s <- evalStmt env stmt
             case s of
                 Break -> return Nil
-                Return a -> return (Return a)
+                Return a -> return a
                 _ -> do
                     case incr of
                         Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
@@ -207,7 +219,7 @@ evalStmt env (ForStmt init test incr stmt) = do
                 ac <- evalStmt env stmt
                 case ac of
                     Break -> return Nil
-                    Return a -> return (Return a) 
+                    Return a -> return a
                     _ -> do
                         case incr of
                             Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
