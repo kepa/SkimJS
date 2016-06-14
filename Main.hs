@@ -176,10 +176,22 @@ evalStmt env (ReturnStmt (Just expr)) = do
 --Inicio Break
 evalStmt env (BreakStmt _) = return Break
 --Fim Break
-
+evalStmt env (ForStmt NoInit Nothing Nothing stmt) = return $ Return Nil
+evalStmt env (ForStmt (VarInit a) test inc stmt) = do
+        vars <- evalStmt env (VarDeclStmt a)
+        Bool t <- evalExpr env test
+        if t then do
+            ac <- evalStmt env stmt
+            case ac of
+                Break -> return Nil
+                Return a -> return (Return a) 
+                otherwise -> do
+                    evalExpr env inc
+                    evalStmt env (ForStmt (VarInit a) test inc stmt)
+        else return Nil            
 --FOR Não sei se esse é o lugar correto.
 
-evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
+{-evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
     let
         (ST a) = evalStmt env EmptyStmt
         (ignore, newS) = a s
@@ -210,13 +222,13 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                                     Nothing -> return Nil
                                 evalStmt env (ForStmt NoInit condi itera action)
         (resp,ign) = g newS
-    in (resp,ign)   
+    in (resp,ign)-}   
 
-evalFor :: StateT -> ForInit -> StateTransformer Value
-evalFor env (VarInit a) = do
-    evalStmt env (VarDeclStmt a)
-evalFor env NoInit = return Nil
-evalFor env (ExprInit b) = evalExpr env b
+--evalFor :: StateT -> ForInit -> StateTransformer Value
+--evalFor env (VarInit a) = do
+--    evalStmt env (VarDeclStmt a)
+--evalFor env NoInit = return Nil
+--evalFor env (ExprInit b) = evalExpr env b
 --fim for
 
 -- Do not touch this one :)
