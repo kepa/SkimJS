@@ -49,7 +49,7 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
         "tail" -> tail' env e
         "concat" -> concat' env e params
         "len" -> intToST env (lengthInt e)
-        "equals" -> equalsToST env (equalsBool env e (arrToST params))
+--        "equals" -> equalsToST env (equalsBool env e (arrToST params))
 
 -- getElement from list
 getElement :: StateT -> Value -> Value -> StateTransformer Value
