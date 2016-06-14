@@ -177,7 +177,7 @@ evalStmt env (ReturnStmt (Just expr)) = do
 evalStmt env (BreakStmt _) = return Break
 --Fim Break
 evalStmt env (ForStmt NoInit Nothing Nothing stmt) = return $ Return Nil
-evalStmt env (ForStmt (VarInit a) test inc stmt) = do
+evalStmt env (ForStmt (VarInit a) (Just test) (Just inc) stmt) = do
         vars <- evalStmt env (VarDeclStmt a)
         Bool t <- evalExpr env test
         if t then do
@@ -187,7 +187,7 @@ evalStmt env (ForStmt (VarInit a) test inc stmt) = do
                 Return a -> return (Return a) 
                 otherwise -> do
                     evalExpr env inc
-                    evalStmt env (ForStmt (VarInit a) test inc stmt)
+                    evalStmt env (ForStmt (VarInit a) (Just test) (Just inc) stmt)
         else return Nil            
 --FOR Não sei se esse é o lugar correto.
 
