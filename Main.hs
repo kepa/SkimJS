@@ -176,19 +176,46 @@ evalStmt env (ReturnStmt (Just expr)) = do
 --Inicio Break
 evalStmt env (BreakStmt _) = return Break
 --Fim Break
-evalStmt env (ForStmt NoInit Nothing Nothing stmt) = return $ Return Nil
-evalStmt env (ForStmt (VarInit a) (Just test) (Just inc) stmt) = do
-        vars <- evalStmt env (VarDeclStmt a)
-        Bool t <- evalExpr env test
-        if t then do
-            ac <- evalStmt env stmt
-            case ac of
+{-
+ForStmt ForInit        
+            (Maybe Expression) -- test
+            (Maybe Expression) -- increment
+            Statement          -- body 
+-}
+--evalStmt env (ForStmt NoInit Nothing Nothing stmt) = return $ Return Nil
+--evalStmt env init test increment stmt
+evalStmt env (ForStmt init test incr stmt) = do
+    case init of
+        NoInit -> return Nil
+        VarInit vars -> evalStmt env (VarDeclStmt vars)
+        ExprInit expr -> evalExpr env expr
+    case test of
+        Nothing -> do
+            s <- evalStmt env stmt
+            case s of
                 Break -> return Nil
-                Return a -> return (Return a) 
-                otherwise -> do
-                    evalExpr env inc
-                    evalStmt env (ForStmt (VarInit a) (Just test) (Just inc) stmt)
-        else return Nil            
+                Return a -> return (Return a)
+                _ -> do
+                    case incr of
+                        Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
+                        (Just e) -> do
+                            evalExpr env e
+                            evalStmt env (ForStmt NoInit test incr stmt)
+        Just e -> do
+            Bool t <- evalExpr env e
+            if t then do
+                ac <- evalStmt env stmt
+                case ac of
+                    Break -> return Nil
+                    Return a -> return (Return a) 
+                    _ -> do
+                        case incr of
+                            Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
+                            (Just e) -> do
+                                evalExpr env e
+                                evalStmt env (ForStmt init test incr stmt)
+            else return Nil
+
 --FOR Não sei se esse é o lugar correto.
 
 {-evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
