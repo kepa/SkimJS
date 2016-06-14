@@ -173,29 +173,12 @@ evalStmt env (ReturnStmt (Just expr)) = do
     e <- evalExpr env expr
     return $ Return e
 
---Editei aqui(Parte do Break)
-{-evalStmt env (BlockStmt []) = return Nil
-evalStmt env (BlockStmt (stmt1:stmt2)) = do
-    case stmt1 of
-        BreakStmt _ -> return Break
-        ReturnStmt a -> do
-            case a of
-                (Just expr) ->
-                    ST $ \s ->
-                        let
-                            respos = let
-                                        (ST f) = evalExpr env expr
-                                        (resp,ign) = f s
-                                        resposta = (return resp)
-                                     in resposta
-                        in (respos,s)
-                (Nothing) -> return Nil
-        _ -> do
-            e <- evalStmt env stmt1
-            case e of
-                (Break) -> return Break
-                (ReturnStmt v) -> return v
-                _ -> evalStmt env (BlockStmt stmt2)
+--Inicio Break
+evalStmt env (BreakStmt _) = return Break
+--Fim Break
+
+--FOR Não sei se esse é o lugar correto.
+
 evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
     let
         (ST a) = evalStmt env EmptyStmt
@@ -209,7 +192,7 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                         r1 <- evalStmt env action
                         case r1 of 
                             Break -> return Nil
-                            (ReturnStmt a) -> return (ReturnStmt a)
+                            (Return a) -> return (Return a)
                             _ -> do
                                 case itera of 
                                     (Just (b)) -> evalExpr env b
@@ -220,26 +203,21 @@ evalStmt env (ForStmt initi condi itera action) = ST $ \s ->
                     r1 <- evalStmt env action
                     case r1 of
                         Break -> return Nil
-                        (ReturnStmt a) -> return (ReturnStmt a)
+                        (Return a) -> return (Return a)
                         _ -> do
                                 case itera of 
                                     (Just (b)) -> evalExpr env b
                                     Nothing -> return Nil
                                 evalStmt env (ForStmt NoInit condi itera action)
         (resp,ign) = g newS
-    in (resp,ign)-}
---FIM FOR
---Inicio Break
-evalStmt env (BreakStmt _) = return Break
---Fim Break
+    in (resp,ign)   
 
---FOR Não sei se esse é o lugar correto.
 evalFor :: StateT -> ForInit -> StateTransformer Value
 evalFor env (VarInit a) = do
     evalStmt env (VarDeclStmt a)
 evalFor env NoInit = return Nil
 evalFor env (ExprInit b) = evalExpr env b
-
+--fim for
 
 -- Do not touch this one :)
 evaluate :: StateT -> [Statement] -> StateTransformer Value
