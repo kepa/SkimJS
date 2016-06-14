@@ -12,15 +12,25 @@ if (y < 5) {
 }
 
 //Teste 3
+var x = 0;
 while(x < 3) {
-	x = x + 1;
+    x = x + 1;
+    if(x == 2){
+        break;
+    }
 }
-
+ 
 //Teste 4
-while(y < 40) {
-	y = y + 1;
-	break;
+function factorial(num) {
+    var val = 1;
+    var i = 2;
+    for (; i <= num; i = i + 1) {
+        val = val * i;
+    }
+    return val;
 }
+ 
+factorial(10);
 
 //Teste 5
 var x;
