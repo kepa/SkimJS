@@ -23,8 +23,17 @@ while(y < 40) {
 }
 
 //Teste 5
-lista = [2,4,6,8,10];
+var lista = [2,4,6,8,10];
 lista[2];
 
 //Teste 6
 lista.length();
+
+//Teste 7
+lista.head();
+
+//Teste 8
+lista.tail();
+
+//Teste 9
+lista.concat(12,14,16);
