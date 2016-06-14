@@ -103,9 +103,9 @@ tail' env (List (a:as)) = return $ (List as)
 -- não funciona
 concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
 concat' env (List ls) [] = return $ List ls
-concat' env (List ls) (a1:as1) = do
+concat' env (List ls) (a1:(ArrayLit as1)) = do
     a <- evalExpr env a1
---    as <- evalExpr env as1
+--    ArrayLit as <- evalExpr env (ArrayLit as1)
     concat' env (List (ls ++ [a])) as1
 
 -- lengthInt env list -> Int
