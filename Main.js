@@ -15,8 +15,23 @@ function test(x){
 
 test(5);
 
-*/
-
 var list = [1,2,3,4,5];
 
 list[0];
+*/
+
+/*
+var x = 0;
+while(true){
+	x = x + 1;
+	break;
+}
+x;
+*/
+
+var i = 0;
+var x = 10;
+for (; i < 10; i = i+1) {
+	x = x + 1;
+}
+x;
