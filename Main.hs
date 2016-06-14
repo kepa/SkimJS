@@ -48,7 +48,7 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
         "head" -> head' env e
         "tail" -> tail' env e
         "concat" -> concat' env e params
-        "length" -> intToST env (lengthInt e)
+        "len" -> intToST env (lengthInt e)
         -- "equals" -> equalsToST env (equalsBool env e params)
 
 -- getElement from list
@@ -105,8 +105,10 @@ concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
 concat' env (List ls) [] = return $ List ls
 concat' env (List ls) (a1:as1) = do
     a <- evalExpr env a1
+    (List as) <- concat' env a as1 -- transforma [expression] em value
+    -- as <- concat' env (List []) as1
 --    as <- evalExpr env as1
-    concat' env (List (ls ++ [a])) as1
+    return (List (ls ++ as))
 
 -- lengthInt env list -> Int
 lengthInt :: Value -> Int
@@ -137,7 +139,7 @@ evalStmt env (BlockStmt (stm:stmts)) = do
     s <- evalStmt env stm
     case s of
         Break -> return Nil
-        Return a -> return (Return a)
+        Return a -> return a
         _ -> evalStmt env (BlockStmt stmts)
 -- Empty
 evalStmt env EmptyStmt = return Nil
@@ -162,7 +164,7 @@ evalStmt env (WhileStmt expr stmt) = do
         s <- evalStmt env stmt
         case s of
             Break -> return Nil
-            Return a -> return (Return a)
+            Return a -> return a
             _ -> evalStmt env (WhileStmt expr stmt)
     else return Nil
 -- Function
@@ -194,7 +196,7 @@ evalStmt env (ForStmt init test incr stmt) = do
             s <- evalStmt env stmt
             case s of
                 Break -> return Nil
-                Return a -> return (Return a)
+                Return a -> return a
                 _ -> do
                     case incr of
                         Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
@@ -207,7 +209,7 @@ evalStmt env (ForStmt init test incr stmt) = do
                 ac <- evalStmt env stmt
                 case ac of
                     Break -> return Nil
-                    Return a -> return (Return a) 
+                    Return a -> return a
                     _ -> do
                         case incr of
                             Nothing -> evalStmt env (ForStmt NoInit test incr stmt)
