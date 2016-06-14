@@ -47,7 +47,7 @@ evalExpr env (CallExpr (DotRef expr (Id name)) params) = do
     case name of
         "head" -> head' env e
         "tail" -> tail' env e
-        "concat" -> concat' env e params
+        "concat" -> concat' env e (ArrayLit params)
         "length" -> intToST env (lengthInt e)
         -- "equals" -> equalsToST env (equalsBool env e params)
 
@@ -101,12 +101,12 @@ tail' env (List (a:as)) = return $ (List as)
 -- concat' env list expr
 -- [expr: list2]
 -- não funciona
-concat' :: StateT -> Value -> [Expression] -> StateTransformer Value
-concat' env (List ls) [] = return $ List ls
-concat' env (List ls) (a1:(ArrayLit as1)) = do
+concat' :: StateT -> Value -> Expression -> StateTransformer Value
+concat' env (List ls) (ArrayLit []) = return $ List ls
+concat' env (List ls) (ArrayLit (a1:as1)) = do
     a <- evalExpr env a1
---    ArrayLit as <- evalExpr env (ArrayLit as1)
-    concat' env (List (ls ++ [a])) as1
+--    as <- evalExpr env (ArrayLit as1)
+    concat' env (List (ls ++ [a])) (ArrayLit as1)
 
 -- lengthInt env list -> Int
 lengthInt :: Value -> Int
